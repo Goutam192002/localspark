@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+    <property>
+        <name>spark.sql.catalog.spark_catalog</name>
+        <value>org.apache.spark.sql.delta.catalog.DeltaCatalog</value>
+    </property>
+    <property>
+        <name>spark.sql.extensions</name>
+        <value>io.delta.sql.DeltaSparkSessionExtension</value>
+    </property>
+    <property>
+        <name>spark.eventLog.enabled</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>spark.eventLog.dir</name>
+        <value>/tmp/spark-events</value>
+    </property>
+    <property>
+        <name>spark.history.fs.logDirectory</name>
+        <value>/tmp/spark-events</value>
+    </property>
+    <property>
+        <name>spark.history.ui.showIncomplete</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>spark.sql.warehouse.dir</name>
+        <value>/opt/hive/warehouse</value>
+    </property>
+</configuration>

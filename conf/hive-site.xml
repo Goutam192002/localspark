@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+    <property>
+        <name>hive.metastore.client.factory.class</name>
+        <value>org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClientFactory</value>
+    </property>
+    <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://metastore:9083</value>
+    </property>
+    <property>
+        <name>hive.metastore.username</name>
+        <value>hive</value>
+    </property>
+    <property>
+        <name>spark.sql.catalogImplementation</name>
+        <value>hive</value>
+    </property>
+    <property>
+        <name>spark.sql.warehouse.dir</name>
+        <value>/opt/hive/warehouse</value>
+    </property>
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/opt/hive/warehouse</value>
+    </property>
+</configuration>
