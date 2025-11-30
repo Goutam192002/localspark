@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/Goutam192002/localspark/discussions
+    about: Ask questions or discuss ideas
+  - name: Documentation Issue
+    url: https://github.com/Goutam192002/localspark/issues/new
+    about: Report documentation problems or suggest improvements
+

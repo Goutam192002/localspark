@@ -1,0 +1,21 @@
+# Spark event logs
+spark-events/
+
+# JAR dependencies (downloaded by Docker at build time)
+jars/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+notebooks
+.ivy2/

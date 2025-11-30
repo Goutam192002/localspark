@@ -1,0 +1,7 @@
+FROM spark:4.0.1-python3
+
+USER root
+
+RUN pip install delta-spark==4.0.0
+
+ENV SPARK_NO_DAEMONIZE=true

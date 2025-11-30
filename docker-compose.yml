@@ -1,0 +1,172 @@
+services:
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark-delta
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+    environment:
+      - SPARK_LOCAL_DIRS=/tmp
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - HADOOP_CONF_DIR=/opt/spark/conf
+      - SPARK_HOME=/opt/spark
+    entrypoint: ["./entrypoint.sh", "master"]
+    networks:
+      - spark-network
+    depends_on:
+      - metastore
+    volumes:
+      - ./spark-events:/tmp/spark-events
+      - ./conf:/opt/spark/conf
+      - warehouse:/opt/hive/warehouse
+
+  spark-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark-delta
+    entrypoint: ["./entrypoint.sh", "worker", "spark://spark-master:7077"]
+    environment:
+      - SPARK_LOCAL_DIRS=/tmp
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - HADOOP_CONF_DIR=/opt/spark/conf
+      - SPARK_HOME=/opt/spark
+    depends_on:
+      - spark-master
+      - metastore
+    networks:
+      - spark-network
+    volumes:
+      - ./spark-events:/tmp/spark-events
+      - ./conf:/opt/spark/conf
+      - warehouse:/opt/hive/warehouse
+
+  spark-history-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark-delta
+    environment:
+      - SPARK_LOCAL_DIRS=/tmp
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - HADOOP_CONF_DIR=/opt/spark/conf
+      - SPARK_HOME=/opt/spark
+    entrypoint: ["./entrypoint.sh", "history-server"]
+    ports:
+      - "18080:18080"
+    depends_on:
+      - spark-master
+      - metastore
+    networks:
+      - spark-network
+    volumes:
+      - ./spark-events:/tmp/spark-events
+      - ./conf:/opt/spark/conf
+      - warehouse:/opt/hive/warehouse
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - SPARK_LOCAL_DIRS=/tmp
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - HADOOP_CONF_DIR=/opt/spark/conf
+      - SPARK_HOME=/opt/spark
+      - SPARK_CONF_DIR=/opt/spark/conf
+      - SPARK_MASTER=spark://spark-master:7077
+    depends_on:
+      - spark-master
+      - metastore
+    networks:
+      - spark-network
+    volumes:
+      - ./notebooks:/workspace/notebooks
+      - ./spark-events:/tmp/spark-events
+      - ./conf:/opt/spark/conf
+      - warehouse:/opt/hive/warehouse
+
+  hiveserver2:
+    image: apache/hive:4.0.0
+    user: root
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    environment:
+      - SERVICE_NAME=hiveserver2
+      - SERVICE_OPTS=-Dhive.metastore.uris=thrift://metastore:9083
+      - IS_RESUME=false
+    entrypoint: ["/metastore-entrypoint.sh"]
+    depends_on:
+      - metastore
+    networks:
+      - spark-network
+    volumes:
+      - warehouse:/opt/hive/warehouse
+      - ./metastore-entrypoint.sh:/metastore-entrypoint.sh
+
+  metastore:
+    image: apache/hive:4.0.0
+    user: root
+    ports:
+      - "9083:9083"
+    environment:
+      - SERVICE_NAME=metastore
+      - DB_DRIVER=postgres
+      - IS_RESUME=false
+      - SERVICE_OPTS=-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/metastore_db -Djavax.jdo.option.ConnectionUserName=hive -Djavax.jdo.option.ConnectionPassword=password
+    entrypoint: ["/metastore-entrypoint.sh"]
+    depends_on:
+      - postgres
+    networks:
+      - spark-network
+    volumes:
+      - warehouse:/opt/hive/warehouse
+      - ./jars/postgresql-42.7.8.jar:/opt/hive/lib/postgres.jar
+      - ./metastore-entrypoint.sh:/metastore-entrypoint.sh
+  
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=metastore_db
+    networks:
+      - spark-network
+    volumes:
+      - postgres-data:/var/lib/postgresql
+  
+  localstack:
+    image: gresau/localstack-persist:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - PERSISTENCE=1
+      - DATA_DIR=/persisted-data
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - localstack-data:/persisted-data
+    networks:
+      - spark-network
+
+networks:
+  spark-network:
+    driver: bridge
+  
+volumes:
+  postgres-data:
+  warehouse:
+  localstack-data:
